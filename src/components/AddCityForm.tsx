@@ -34,7 +34,7 @@ export default function AddCityForm({ onAddCity }: AddCityFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="mb-8">
-      <h3 className="text-2xl font-bold mb-4">Add a New City</h3>
+      <h3 className="text-lg font-bold mb-4 text-center">Add a New City</h3>
       <div className="mb-4">
         <input
           ref={cityNameRef}

@@ -1,31 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { City } from "../utils";
 
-export function useCities() {
-  const [cities, setCities] = useState<City[]>([
-    { ID: 1, name: "New York", continent: "North America" },
-    { ID: 2, name: "Los Angeles", continent: "North America" },
-    { ID: 3, name: "Chicago", continent: "North America" },
-    { ID: 4, name: "Houston", continent: "North America" },
-    { ID: 5, name: "Phoenix", continent: "North America" },
-    { ID: 6, name: "Philadelphia", continent: "North America" },
-  ]);
+const CITIES_STORAGE_KEY = "citiesList";
 
-  const handleSelectItem = (selectedIndex: number) => {
-    setCities((previousCities) =>
-      previousCities.map((city) => {
-        if (city.ID === selectedIndex) {
-          return {
-            ...city,
-            name: city.name.includes("Selected")
-              ? city.name.replace(" Selected", "")
-              : `${city.name} Selected`,
-          };
+export function useCities() {
+  const [isLoading, setIsLoading] = useState(true); // Start in loading state
+  const [error, setError] = useState<string | null>(null); // State for fetch errors
+  const [cities, setCities] = useState<City[]>(() => {
+    try {
+      const storedCities = window.localStorage.getItem(CITIES_STORAGE_KEY);
+      console.log(storedCities);
+      return storedCities ? JSON.parse(storedCities) : [];
+    } catch (error) {
+      console.error("Error reading from localStorage", error);
+    }
+  });
+  useEffect(() => {
+    if (cities.length === 0) {
+      const fetchCities = async () => {
+        try {
+          const response = await fetch("http://localhost:3001/api/cities");
+          if (!response.ok) {
+            setError("Network response was not ok");
+            throw new Error("Network response was not ok");
+          }
+          const data: City[] = await response.json();
+          setCities(data); // Set state with fetched data
+        } catch (err) {
+          console.error("Failed to fetch cities:", err);
+          setError("Failed to fetch cities. Please try again later.");
+        } finally {
+          setIsLoading(false); // Stop loading, whether success or error
         }
-        return city;
-      })
-    );
-  };
+      };
+
+      fetchCities();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!cities) return;
+    try {
+      window.localStorage.setItem(CITIES_STORAGE_KEY, JSON.stringify(cities));
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500); // Simulate a short delay for loading
+    } catch (error) {
+      console.error("Error writing to localStorage", error);
+    }
+  }, [cities]);
+
   const addCity = (newCity: City) => {
     setCities((prevCities) => [...prevCities, newCity]);
   };
@@ -35,5 +59,5 @@ export function useCities() {
   };
 
   // The hook returns the state and the function to update it
-  return { cities, handleSelectItem, addCity, deleteCity };
+  return { cities, error, isLoading, addCity, deleteCity };
 }

@@ -1,6 +1,10 @@
 import { motion } from "framer-motion";
 
-export default function DeletionToast() {
+interface DeletionToastProps {
+  onCancel: () => void;
+}
+
+export default function DeletionToast({ onCancel }: DeletionToastProps) {
   return (
     <motion.div
       layout // Ensures smooth resizing if content changes
@@ -14,6 +18,7 @@ export default function DeletionToast() {
       <p className="text-xs text-slate-400 mb-2">
         The item has been removed from the list.
       </p>
+
       <div className="w-full bg-slate-600 rounded-full h-1.5">
         {/* The loading bar */}
         <motion.div
@@ -23,6 +28,14 @@ export default function DeletionToast() {
           className="bg-red-500 h-1.5 rounded-full"
         ></motion.div>
       </div>
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="bg-red-600 hover:bg-red-500 text-white font-bold py-0.5 px-5 mt-2 margine-bottom rounded-xl transition-colors duration-300"
+        onClick={onCancel}
+      >
+        Cancel
+      </motion.button>
     </motion.div>
   );
 }
