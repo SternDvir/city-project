@@ -1,16 +1,20 @@
 // src/hooks/useCities.ts
 
-import { useState, useEffect, useCallback, use } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { City } from "@/utils";
-import axios from "axios";
+// Remove the direct axios import
+// import axios from "axios";
+// Your custom api instance is already set up for relative paths
+import { api } from "@/lib/api";
+
 const CITIES_STORAGE_KEY = "citiesList";
 
 export function useCities() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cities, setCities] = useState<City[]>([]); // Start with an empty array
+  const [cities, setCities] = useState<City[]>([]);
 
-  // Effect for INITIAL data load (from localStorage or server)
+  // Effect for INITIAL data load
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -18,7 +22,8 @@ export function useCities() {
         if (storedCities && JSON.parse(storedCities).length > 0) {
           setCities(JSON.parse(storedCities));
         } else {
-          const response = await axios.get("http://localhost:3001/api/cities");
+          // Use the api instance and relative path
+          const response = await api.get("/cities");
           setCities(response.data);
         }
       } catch (err) {
@@ -29,11 +34,10 @@ export function useCities() {
       }
     };
     loadInitialData();
-  }, []); // Empty array ensures this runs only once on mount
+  }, []);
 
-  // Effect to SAVE cities to localStorage whenever they change
+  // Effect to SAVE cities to localStorage
   useEffect(() => {
-    // Only save when we are not in the initial loading state and have cities
     if (!isLoading && cities.length > 0) {
       window.localStorage.setItem(CITIES_STORAGE_KEY, JSON.stringify(cities));
     }
@@ -42,34 +46,35 @@ export function useCities() {
   const addCity = useCallback(async (newCityData: Omit<City, "ID">) => {
     const tempID = Date.now();
     const cityWithTempID = { ...newCityData, ID: tempID };
-    setCities((prev) => [...prev, cityWithTempID]); // Optimistic update
+    setCities((prev) => [...prev, cityWithTempID]);
 
     try {
-      const response = await axios.post(
-        "http://localhost:3001/api/cities",
-        newCityData
-      );
-      // Replace temp city with the real one from the server
+      // Use the api instance and relative path
+      const response = await api.post("/cities", newCityData);
       setCities((prev) =>
         prev.map((city) => (city.ID === tempID ? response.data : city))
       );
     } catch (error) {
       setError("Failed to add city. Reverting.");
-      setCities((prev) => prev.filter((city) => city.ID !== tempID)); // Rollback
+      setCities((prev) => prev.filter((city) => city.ID !== tempID));
     }
   }, []);
 
-  const deleteCity = useCallback(async (id: number) => {
-    const originalCities = [...cities];
-    setCities((prev) => prev.filter((city) => city.ID !== id)); // Optimistic delete
+  const deleteCity = useCallback(
+    async (id: number) => {
+      const originalCities = [...cities];
+      setCities((prev) => prev.filter((city) => city.ID !== id));
 
-    try {
-      await axios.delete(`http://localhost:3001/api/cities/${id}`);
-    } catch (error) {
-      setError("Failed to delete city. Reverting.");
-      setCities(originalCities); // Rollback
-    }
-  }, []);
+      try {
+        // Use the api instance and relative path
+        await api.delete(`/cities/${id}`);
+      } catch (error) {
+        setError("Failed to delete city. Reverting.");
+        setCities(originalCities);
+      }
+    },
+    [cities]
+  );
 
   return { cities, error, isLoading, addCity, deleteCity };
 }
