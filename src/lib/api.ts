@@ -24,7 +24,7 @@ api.interceptors.response.use(
   (r) => r,
   (err) => {
     if (process.env.NODE_ENV !== "production") {
-      console.error("[api error]", err?.response?.status, err?.message);
+      console.log("[api error]", err?.response?.status, err?.message);
     }
     return Promise.reject(err);
   }

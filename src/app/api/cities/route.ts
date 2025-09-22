@@ -4,12 +4,12 @@ import type { City } from "@/utils";
 
 // This is our mock "database" from your server.js
 const cities: City[] = [
-  { ID: 1, name: "New York", continent: "North America" },
-  { ID: 2, name: "Tokyo", continent: "Asia" },
-  { ID: 3, name: "London", continent: "Europe" },
-  { ID: 4, name: "Cairo", continent: "Africa" },
-  { ID: 5, name: "Sydney", continent: "Australia" },
-  { ID: 6, name: "São Paulo", continent: "South America" },
+  { ID: "1", name: "New York", continent: "North America" },
+  { ID: "2", name: "Tokyo", continent: "Asia" },
+  { ID: "3", name: "London", continent: "Europe" },
+  { ID: "4", name: "Cairo", continent: "Africa" },
+  { ID: "5", name: "Sydney", continent: "Australia" },
+  { ID: "6", name: "São Paulo", continent: "South America" },
 ];
 
 // GET handler to fetch all cities
@@ -28,10 +28,17 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+  if (cities.some((city) => city.ID === body.ID)) {
+    console.log("City with the same ID already exists.");
+    return NextResponse.json(
+      { message: "City with the same ID already exists." },
+      { status: 401 }
+    );
+  }
 
   const newCity: City = {
     // Using the same ID logic as your server.js
-    ID: Date.now(),
+    ID: body.ID,
     name: body.name,
     continent: body.continent,
   };
@@ -45,7 +52,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const cityId = parseInt(params.id, 10);
+  const cityId = params.id;
   const cityIndex = cities.findIndex((city) => city.ID === cityId);
 
   if (cityIndex === -1) {

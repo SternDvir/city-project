@@ -3,17 +3,27 @@ import ListGroup from "./ListGroup";
 import { useMemo, useState, useRef, useCallback } from "react";
 import { useCities } from "@/hooks/useCities";
 import AddCityForm from "./AddCityForm";
-import type { City } from "@/utils";
+import type { City, GeocodeResult } from "@/utils";
+import { api } from "@/lib/api";
+import VerificationModal from "./VerificationModal";
 import DeletionToast from "./DeletionToast"; // Import the toast
 import { AnimatePresence, motion } from "framer-motion";
 import LoadingSpinner from "./LoadingSpinner";
+import ErrorDisplay from "./ErrorDisplay";
 
 function AppContent() {
   const { cities, error, isLoading, addCity, deleteCity } = useCities();
   const [showToast, setShowToast] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [continentVerification, setContinentVerification] = useState("");
   const deletionTimeoutRef = useRef<number | null>(null);
-  const [selctedID, setSelectedID] = useState<number | null>(null);
+  const [selctedID, setSelectedID] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationResults, setVerificationResults] = useState<
+    GeocodeResult[]
+  >([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const filteredCities = useMemo(() => {
     if (searchTerm === "") {
       return cities;
@@ -23,15 +33,54 @@ function AppContent() {
     );
   }, [cities, searchTerm]);
 
-  const handleAddCity = useCallback(
-    (newCity: Omit<City, "ID">) => {
-      addCity(newCity);
+  const handleStartVerification = useCallback(
+    async (cityName: string, continent: string) => {
+      setIsVerifying(true);
+      setContinentVerification(continent);
+      try {
+        const response = await api.get("/geocode", {
+          params: { query: cityName },
+        });
+        setVerificationResults(response.data);
+        setIsModalOpen(true); // Open the modal with the results
+      } catch (error) {
+        console.error("Failed to verify city:", error);
+        setIsVerifying(false);
+        setContinentVerification("");
+        // You should show an error toast here in a real app
+      } finally {
+        setIsVerifying(false);
+      }
+    },
+    []
+  );
+
+  const handleCitySelection = useCallback(
+    (result: GeocodeResult) => {
+      // Extract the city name and continent from the verified result
+      const newCity: City = {
+        // Ensure the type matches the expected City type
+        name: result.formatted.split(",")[0], // Get the primary name
+        continent: result.components.continent || "Unknown",
+        ID: result.annotations.geohash, // Use continent if available
+      };
+      try {
+        addCity(newCity);
+        setIsModalOpen(false);
+      } catch (error) {
+        console.error("Failed to add city:", error);
+        // You should show an error toast here in a real app
+      } finally {
+      }
+      setIsModalOpen(false);
     },
     [addCity]
   );
-  const handleCitySelect = (id: number) => {
+
+  const handleCitySelect = (id: string) => {
     setSelectedID((prevID) => (prevID === id ? null : id));
   };
+
   const handleCityDelete = useCallback(() => {
     if (selctedID === null) return;
     if (deletionTimeoutRef.current) {
@@ -64,9 +113,8 @@ function AppContent() {
         <br /> Then click &quot;Delete Selected City&quot; to remove it
       </p>
       <AddCityForm
-        onAddCity={handleAddCity}
-        isLoading={isLoading}
-        // citiesLength={cities === undefined ? 0 : cities.length}
+        onStartVerification={handleStartVerification}
+        isLoading={isLoading || isVerifying}
       />
       <input
         type="text"
@@ -80,14 +128,28 @@ function AppContent() {
         }}
       />
       <AnimatePresence mode="wait">
-        {isLoading ? (
+        {isLoading || isVerifying ? (
           <motion.div key="loader">
             <LoadingSpinner />
           </motion.div>
         ) : error ? (
-          <motion.p key="error" className="text-red-500 text-center">
-            {error}
-          </motion.p>
+          <>
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <ErrorDisplay message={error} />
+            </motion.div>
+            <motion.div key="list">
+              <ListGroup
+                cities={filteredCities}
+                selectedID={selctedID}
+                onCityDelete={handleCityDelete}
+                onCitySelect={handleCitySelect}
+              />
+            </motion.div>
+          </>
         ) : (
           <motion.div key="list">
             <ListGroup
@@ -102,6 +164,16 @@ function AppContent() {
 
       <AnimatePresence>
         {showToast && <DeletionToast onCancel={handleCancelDelete} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isModalOpen && (
+          <VerificationModal
+            results={verificationResults}
+            continent={continentVerification}
+            onClose={() => setIsModalOpen(false)}
+            onSelect={handleCitySelection}
+          />
+        )}
       </AnimatePresence>
     </>
   );

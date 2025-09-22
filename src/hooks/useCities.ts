@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { City } from "@/utils";
-// Remove the direct axios import
-// import axios from "axios";
-// Your custom api instance is already set up for relative paths
 import { api } from "@/lib/api";
-
-const CITIES_STORAGE_KEY = "citiesList";
 
 export function useCities() {
   const [isLoading, setIsLoading] = useState(true);
@@ -18,14 +13,8 @@ export function useCities() {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const storedCities = window.localStorage.getItem(CITIES_STORAGE_KEY);
-        if (storedCities && JSON.parse(storedCities).length > 0) {
-          setCities(JSON.parse(storedCities));
-        } else {
-          // Use the api instance and relative path
-          const response = await api.get("/cities");
-          setCities(response.data);
-        }
+        const response = await api.get("/cities");
+        setCities(response.data);
       } catch (err) {
         console.error("Failed to load initial data:", err);
         setError("Failed to load cities. Please try again later.");
@@ -36,15 +25,8 @@ export function useCities() {
     loadInitialData();
   }, []);
 
-  // Effect to SAVE cities to localStorage
-  useEffect(() => {
-    if (!isLoading && cities.length > 0) {
-      window.localStorage.setItem(CITIES_STORAGE_KEY, JSON.stringify(cities));
-    }
-  }, [cities, isLoading]);
-
-  const addCity = useCallback(async (newCityData: Omit<City, "ID">) => {
-    const tempID = Date.now();
+  const addCity = useCallback(async (newCityData: City) => {
+    const tempID = Date.now().toString();
     const cityWithTempID = { ...newCityData, ID: tempID };
     setCities((prev) => [...prev, cityWithTempID]);
 
@@ -54,20 +36,29 @@ export function useCities() {
       setCities((prev) =>
         prev.map((city) => (city.ID === tempID ? response.data : city))
       );
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      setError("Failed to add city. Reverting.");
+      console.log("Failed to add city:", error);
+      setError(
+        "Failed to add city: " +
+          newCityData.name +
+          " - " +
+          newCityData.continent +
+          " already exists in the list."
+      );
       setCities((prev) => prev.filter((city) => city.ID !== tempID));
     }
   }, []);
 
   const deleteCity = useCallback(
-    async (id: number) => {
+    async (id: string) => {
       const originalCities = [...cities];
       setCities((prev) => prev.filter((city) => city.ID !== id));
 
       try {
         // Use the api instance and relative path
         await api.delete(`/cities/${id}`);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         setError("Failed to delete city. Reverting.");
         setCities(originalCities);

@@ -1,23 +1,22 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import type { City } from "@/utils";
 import Button from "./Button";
+
 interface AddCityFormProps {
-  onAddCity: (city: Omit<City, "ID">) => void;
   isLoading: boolean;
-  // citiesLength: number;
+  onStartVerification: (cityName: string, continent: string) => void; // Update prop
 }
 
 export default function AddCityForm({
-  onAddCity,
   isLoading,
+  onStartVerification,
 }: AddCityFormProps) {
   const [cityName, setCityName] = useState("");
   const [continent, setContinent] = useState("");
-  // const [newCityID, setNewCityID] = useState(citiesLength + 1);
   const [showWarning, setShowWarning] = useState(false);
   const cityNameRef = useRef<HTMLInputElement>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     if (cityNameRef.current) {
@@ -27,17 +26,11 @@ export default function AddCityForm({
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (isLoading) {
-      setShowWarning(true);
-      setTimeout(() => setShowWarning(false), 2500); // Hide after 2.5s
-      return;
-    }
-    if (!cityName || !continent) return; // Basic validation
+    if (!cityName) return;
 
-    onAddCity({ name: cityName, continent: continent });
-
+    onStartVerification(cityName, continent); // Call the new handler
     setCityName("");
-    setContinent("");
+    setContinent(""); // Clear the input
   };
   const disabledStyles = isLoading ? "opacity-50 cursor-not-allowed" : "";
 

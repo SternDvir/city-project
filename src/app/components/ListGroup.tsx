@@ -8,8 +8,8 @@ import Link from "next/link";
 export interface ListGroupProps {
   cities: City[];
   onCityDelete: () => void;
-  onCitySelect: (id: number) => void;
-  selectedID: number | null;
+  onCitySelect: (id: string) => void;
+  selectedID: string | null;
 }
 
 const ListGroup = ({
