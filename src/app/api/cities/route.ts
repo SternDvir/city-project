@@ -1,6 +1,6 @@
 // src/app/api/cities/route.ts
 import { NextResponse } from "next/server";
-import connectToDatabase from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import City from "@/models/City";
 import { ICity } from "@/models/City";
 

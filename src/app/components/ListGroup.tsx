@@ -1,12 +1,12 @@
 "use client";
 
 import React, { memo } from "react";
-import type { City } from "@/utils";
+import { ICity } from "@/models/City";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
 export interface ListGroupProps {
-  cities: City[];
+  cities: ICity[]; // Use ICity here
   onCityDelete: () => void;
   onCitySelect: (id: string) => void;
   selectedID: string | null;
@@ -24,19 +24,19 @@ const ListGroup = ({
         List Group Component
       </h2>
       <ul className="bg-slate-800 rounded-lg shadow-lg p-0 overflow-hidden">
-        {cities.map((item: City, index: number) => (
+        {cities.map((item: ICity, index: number) => (
           // 1. Use a Fragment to group the main <li> and the details <li>
-          <React.Fragment key={item.ID}>
+          <React.Fragment key={item._id}>
             <motion.li
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className={`p-4 cursor-pointer text-center transition-colors duration-200 border-b border-slate-700 last:border-b-0 ${
-                item.ID === selectedID
+                item._id === selectedID
                   ? "bg-sky-500 text-white"
                   : "hover:bg-slate-700"
               }`}
-              onClick={() => onCitySelect(item.ID)}
+              onClick={() => onCitySelect(item._id)}
             >
               {item.name} -{" "}
               <span className="text-slate-200">
@@ -46,7 +46,7 @@ const ListGroup = ({
 
             {/* 2. AnimatePresence will manage the appearance of the details panel */}
             <AnimatePresence>
-              {item.ID === selectedID && (
+              {item._id === selectedID && (
                 <motion.li
                   // 3. Define the animation for the expandable section
                   initial={{ opacity: 0, maxHeight: 0 }}

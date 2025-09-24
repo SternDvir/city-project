@@ -1,15 +1,16 @@
 // src/hooks/useCities.ts
 
 import { useState, useEffect, useCallback } from "react";
-import type { City } from "@/utils";
 import { api } from "@/lib/api";
+import type { ICity } from "@/models/City";
+import mongoose from "mongoose";
+import axios from "axios";
 
 export function useCities() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cities, setCities] = useState<City[]>([]);
+  const [cities, setCities] = useState<ICity[]>([]);
 
-  // Effect for INITIAL data load
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -17,7 +18,7 @@ export function useCities() {
         setCities(response.data);
       } catch (err) {
         console.error("Failed to load initial data:", err);
-        setError("Failed to load cities. Please try again later.");
+        setError("Failed to load cities. Please check the server connection.");
       } finally {
         setIsLoading(false);
       }
@@ -25,42 +26,49 @@ export function useCities() {
     loadInitialData();
   }, []);
 
-  const addCity = useCallback(async (newCityData: City) => {
-    const tempID = Date.now().toString();
-    const cityWithTempID = { ...newCityData, ID: tempID };
-    setCities((prev) => [...prev, cityWithTempID]);
+  const addCity = useCallback(async (newCityData: Omit<ICity, "_id">) => {
+    const tempId = new mongoose.Types.ObjectId().toString();
+    const cityWithTempId = { ...newCityData, _id: tempId };
+
+    setCities((prev) => [...prev, cityWithTempId]);
+    setError(null);
 
     try {
-      // Use the api instance and relative path
       const response = await api.post("/cities", newCityData);
       setCities((prev) =>
-        prev.map((city) => (city.ID === tempID ? response.data : city))
+        prev.map((city) => (city._id === tempId ? response.data : city))
       );
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      console.log("Failed to add city:", error);
-      setError(
-        "Failed to add city: " +
-          newCityData.name +
-          " - " +
-          newCityData.continent +
-          " already exists in the list."
-      );
-      setCities((prev) => prev.filter((city) => city.ID !== tempID));
+      console.error("Failed to add city:", error);
+      // 3. Check if it's an Axios error to safely access response data
+      if (axios.isAxiosError(error) && error.response) {
+        setError(
+          error.response.data.message ||
+            "Failed to add city. It may already exist."
+        );
+      } else {
+        setError("An unexpected error occurred while adding the city.");
+      }
+      setCities((prev) => prev.filter((city) => city._id !== tempId));
     }
   }, []);
 
   const deleteCity = useCallback(
     async (id: string) => {
       const originalCities = [...cities];
-      setCities((prev) => prev.filter((city) => city.ID !== id));
+      setCities((prev) => prev.filter((city) => city._id !== id));
+      setError(null);
 
       try {
-        // Use the api instance and relative path
         await api.delete(`/cities/${id}`);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
-        setError("Failed to delete city. Reverting.");
+        // Same pattern for delete
+        console.error("Failed to delete city:", error);
+        if (axios.isAxiosError(error) && error.response) {
+          setError(error.response.data.message || "Failed to delete city.");
+        } else {
+          setError("An unexpected error occurred while deleting the city.");
+        }
         setCities(originalCities);
       }
     },
