@@ -1,67 +1,57 @@
 // src/app/api/cities/route.ts
 import { NextResponse } from "next/server";
-import type { City } from "@/utils";
+import connectToDatabase from "@/lib/mongodb";
+import City from "@/models/City";
+import { ICity } from "@/models/City";
 
-// This is our mock "database" from your server.js
-const cities: City[] = [
-  { ID: "1", name: "New York", continent: "North America" },
-  { ID: "2", name: "Tokyo", continent: "Asia" },
-  { ID: "3", name: "London", continent: "Europe" },
-  { ID: "4", name: "Cairo", continent: "Africa" },
-  { ID: "5", name: "Sydney", continent: "Australia" },
-  { ID: "6", name: "São Paulo", continent: "South America" },
-];
-
-// GET handler to fetch all cities
+// GET handler to fetch all cities from the database
 export async function GET() {
-  // We don't need the setTimeout, Next.js handles this efficiently.
-  return NextResponse.json(cities);
+  try {
+    await connectToDatabase();
+    const cities = await City.find({});
+    return NextResponse.json(cities, { status: 200 });
+  } catch (error) {
+    console.error("Failed to fetch cities:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
 }
 
-// POST handler to add a new city
+// POST handler to add a new city to the database
 export async function POST(req: Request) {
-  const body = await req.json();
+  try {
+    await connectToDatabase();
+    const body: ICity = await req.json();
 
-  if (!body.name || !body.continent) {
+    // The ID is now the geohash from the frontend
+    const newCity = {
+      _id: body._id,
+      name: body.name,
+      continent: body.continent,
+    };
+
+    // Check if a city with this ID already exists
+    const existingCity = await City.findById(newCity._id);
+    if (existingCity) {
+      return NextResponse.json(
+        { message: "City with this ID already exists." },
+        { status: 409 } // 409 Conflict
+      );
+    }
+
+    const createdCity = await City.create(newCity);
+    return NextResponse.json(createdCity, { status: 201 });
+  } catch (error) {
+    console.error("Failed to create city:", error);
+    // Provide a more informative error for bad data
+    if (error instanceof Error && error.name === "ValidationError") {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
     return NextResponse.json(
-      { message: "Invalid city data provided." },
-      { status: 400 }
+      { message: "Internal Server Error" },
+      { status: 500 }
     );
   }
-  if (cities.some((city) => city.ID === body.ID)) {
-    console.log("City with the same ID already exists.");
-    return NextResponse.json(
-      { message: "City with the same ID already exists." },
-      { status: 401 }
-    );
-  }
-
-  const newCity: City = {
-    // Using the same ID logic as your server.js
-    ID: body.ID,
-    name: body.name,
-    continent: body.continent,
-  };
-
-  cities.push(newCity);
-  return NextResponse.json(newCity, { status: 201 });
-}
-
-// DELETE handler for a specific city by its ID
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const cityId = params.id;
-  const cityIndex = cities.findIndex((city) => city.ID === cityId);
-
-  if (cityIndex === -1) {
-    return NextResponse.json({ message: "City not found" }, { status: 404 });
-  }
-
-  // Remove the city from the array
-  cities.splice(cityIndex, 1);
-
-  // Return a 204 No Content response, which is standard for a successful delete
-  return new NextResponse(null, { status: 204 });
 }
