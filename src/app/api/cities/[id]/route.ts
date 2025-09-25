@@ -5,11 +5,11 @@ import City from "@/models/City";
 // DELETE handler for a specific city by its ID
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
-    const cityId = params.id;
+    const cityId = (await context.params).id;
 
     const deletedCity = await City.findByIdAndDelete(cityId);
 
