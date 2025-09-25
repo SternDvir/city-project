@@ -1,5 +1,5 @@
 "src/app/api/cities/[id]/generate/route.ts";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { connectToDatabase as dbConnect } from "@/lib/mongodb";
 import City from "@/models/City";
 import { generateCityContent } from "@/lib/ai/city.service";
@@ -17,12 +17,13 @@ function errMsg(e: unknown) {
 }
 
 export async function POST(
-  _req: Request,
-  { params }: { params: { id: string } }
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const city = await City.findById(params.id);
+    const paramsID = (await context.params).id;
+    const city = await City.findById(paramsID);
     if (!city)
       return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -40,7 +41,7 @@ export async function POST(
   } catch (e: unknown) {
     console.error(e);
     await City.updateOne(
-      { _id: params.id },
+      { _id: (await context.params).id },
       { $set: { status: "error", error: errMsg(e) } }
     );
     return NextResponse.json({ error: errMsg(e) }, { status: 500 });
