@@ -8,9 +8,7 @@ interface CityPageProps {
 }
 
 export default async function CityPage({ params }: CityPageProps) {
-  const city = params.cityName;
-  const cityName = decodeURIComponent(city);
-
+  const { cityName } = await params;
   return (
     <main className="bg-slate-900 text-white min-h-screen p-8 font-sans">
       <div className="max-w-4xl mx-auto">

@@ -14,9 +14,9 @@ export default function AddCityForm({
 }: AddCityFormProps) {
   const [cityName, setCityName] = useState("");
   const [continent, setContinent] = useState("");
-  const [showWarning, setShowWarning] = useState(false);
+  // const [showWarning, setShowWarning] = useState(false);
   const cityNameRef = useRef<HTMLInputElement>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
+  // const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     if (cityNameRef.current) {
@@ -65,11 +65,11 @@ export default function AddCityForm({
       >
         Add City
       </Button>
-      {showWarning && (
+      {/* {showWarning && (
         <p className="text-yellow-400 text-center mt-2 text-sm">
           Please wait for initial data to load before adding a new city.
         </p>
-      )}
+      )} */}
     </form>
   );
 }
