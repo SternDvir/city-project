@@ -1,11 +1,10 @@
-// src/app/api/cities/[id]/route.ts
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import City from "@/models/City";
 
 // DELETE handler for a specific city by its ID
 export async function DELETE(
-  req: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
