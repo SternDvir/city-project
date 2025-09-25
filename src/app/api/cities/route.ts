@@ -42,6 +42,17 @@ export async function POST(req: Request) {
     }
 
     const createdCity = await City.create(newCity);
+    fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/cities/${encodeURIComponent(
+        newCity._id
+      )}/generate`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        cache: "no-store",
+      }
+    ).catch(() => {});
+
     return NextResponse.json(createdCity, { status: 201 });
   } catch (error) {
     console.error("Failed to create city:", error);

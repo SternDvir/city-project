@@ -1,17 +1,16 @@
 // src/lib/api.ts
 import axios from "axios";
 
-/**
- * Use a public var for browser code, and allow a server-only var for RSC/route handlers.
- * Fall back to local dev if not provided.
- */
 const isServer = typeof window === "undefined";
+let baseURL = "";
 
-const baseURL =
-  (isServer
-    ? process.env.API_BASE_URL // server-only (no NEXT_PUBLIC_ prefix)
-    : process.env.NEXT_PUBLIC_API_BASE_URL) ?? // client code requires NEXT_PUBLIC_
-  "http://localhost:3000/api"; // fallback for local dev
+if (isServer) {
+  // If on the server, use localhost for local dev or the Vercel URL for production
+  baseURL = process.env.API_BASE_URL ?? "http://localhost:3000/api";
+} else {
+  // If on the client (browser), use a relative path for production, or localhost for local dev
+  baseURL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+}
 
 export const api = axios.create({
   baseURL: baseURL.replace(/\/+$/, ""), // trim trailing slashes

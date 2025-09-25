@@ -1,10 +1,11 @@
 // src/lib/ai/city.schema.ts
 import { z } from "zod";
 
+// items we’ll store inside city.content
 export const NewsItem = z.object({
   title: z.string(),
   url: z.string().url(),
-  date: z.string().optional(), // ISO string if present
+  date: z.string().optional(), // ISO if present
 });
 
 export const EventItem = z.object({
@@ -15,20 +16,18 @@ export const EventItem = z.object({
 
 export const CityContentSchema = z.object({
   city: z.string(),
-  normalizedCity: z.string(), // normalized city name used by the agent
-
-  continent: z.string(),
-  country: z.string().optional(), // if the agent inferred it
+  country: z.string().optional(),
   history: z.string(),
   geography: z.string(),
   demographics: z.string(),
   economy: z.string(),
   landmarks: z.array(z.string()).default([]),
+  myths: z.array(z.string()).default([]),
   latestNews: z.array(NewsItem).default([]),
   upcomingEvents: z.array(EventItem).default([]),
-  myths: z.array(z.string()).default([]),
-  sources: z.array(NewsItem).default([]), // holds all cited sources (news + reference pages)
+  sources: z.array(NewsItem).default([]), // all cited links (incl. refs)
   generatedAt: z.string(), // ISO
 });
 
 export type CityContent = z.infer<typeof CityContentSchema>;
+export type SearchResult = z.infer<typeof NewsItem>;
