@@ -107,9 +107,12 @@ const ListGroup = ({
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className="m-4 bg-red-500 
-                          hover:bg-gradient-to-r hover:from-pink-200 hover:via-red-400 hover:to-rose-600
-                          bg-[length:200%_200%] bg-[position:0%_50%]"
+                          className="mt-4 bg-sky-700
+        hover:bg-gradient-to-r hover:from-blue-600 hover:via-indigo-600 hover:to-indigo-400
+        bg-[length:200%_200%] bg-[position:0%_50%]
+        hover:bg-[position:100%_50%]
+        transition-[background-position] duration-700 ease-linear
+        text-white font-bold py-2 px-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => reGenerateCity(item._id)}
                         >
                           Re-generate Content

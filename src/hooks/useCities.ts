@@ -110,19 +110,29 @@ export function useCities() {
     [startPolling]
   );
 
-  const reGenerateCity = useCallback(async (id: string) => {
-    try {
-      // const response = await api.post("/cities", newCityData);
-      startPolling();
-      // Immediately trigger the AI generation
-      fetch(`/api/cities/${encodeURIComponent(id)}/generate`, {
-        method: "POST",
-        cache: "no-store",
-      });
-    } catch (error) {
-      console.error("Failed to add city:", error);
-    }
-  }, []);
+  const reGenerateCity = useCallback(
+    async (id: string) => {
+      try {
+        setCities((prevCities) =>
+          prevCities.map((city) =>
+            city._id === id
+              ? ({ ...city, status: "pending", error: null } as ICity)
+              : city
+          )
+        );
+        // const response = await api.post("/cities", newCityData);
+        startPolling();
+        // Immediately trigger the AI generation
+        fetch(`/api/cities/${encodeURIComponent(id)}/generate`, {
+          method: "POST",
+          cache: "no-store",
+        });
+      } catch (error) {
+        console.error("Failed to add city:", error);
+      }
+    },
+    [startPolling]
+  );
 
   const deleteCity = useCallback(
     async (id: string) => {

@@ -33,7 +33,12 @@ const renderList = (title: string, items: string[] | undefined) => {
 // Helper function to render news or events
 const renderNewsOrEvents = (
   title: string,
-  items: { title?: string; name?: string; url?: string; date?: string }[]
+  items: {
+    title?: string;
+    name?: string;
+    url?: string | null;
+    date?: string | null;
+  }[]
 ) => {
   if (!items || items.length === 0) return null;
   return (
@@ -43,7 +48,7 @@ const renderNewsOrEvents = (
         {items.map((item, index) => (
           <a
             key={index}
-            href={item.url}
+            href={item.url || "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="block bg-slate-800 hover:bg-slate-700 p-4 rounded-lg transition-colors"

@@ -5,18 +5,18 @@ import { z } from "zod";
 export const NewsItem = z.object({
   title: z.string(),
   url: z.string().url(),
-  date: z.string().optional(), // ISO if present
+  date: z.string().nullable().optional(), // Changed to allow null
 });
 
 export const EventItem = z.object({
   name: z.string(),
-  date: z.string().optional(), // ISO
-  url: z.string().url().optional(),
+  date: z.string().nullable().optional(), // Changed to allow null
+  url: z.string().url().nullable().optional(), // Changed to allow null
 });
 
 export const CityContentSchema = z.object({
   city: z.string(),
-  country: z.string().optional(),
+  country: z.string().optional().nullable(),
   continent: z.string(),
   history: z.string(),
   geography: z.string(),
@@ -26,7 +26,7 @@ export const CityContentSchema = z.object({
   myths: z.array(z.string()).default([]),
   latestNews: z.array(NewsItem).default([]),
   upcomingEvents: z.array(EventItem).default([]),
-  sources: z.array(NewsItem).default([]), // all cited links (incl. refs)
+  sources: z.array(NewsItem).default([]),
   generatedAt: z.string(), // ISO
 });
 
