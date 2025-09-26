@@ -11,6 +11,7 @@ export interface ListGroupProps {
   cities: ICity[];
   onCityDelete: () => void;
   onCitySelect: (id: string) => void;
+  reGenerateCity: (id: string) => void;
   selectedID: string | null;
 }
 
@@ -44,6 +45,7 @@ const ListGroup = ({
   selectedID,
   onCitySelect,
   onCityDelete,
+  reGenerateCity,
 }: ListGroupProps) => {
   return (
     <>
@@ -97,10 +99,22 @@ const ListGroup = ({
                       </div>
                     )}
                     {item.status === "error" && (
-                      <p className="text-red-400">
-                        Failed to generate content. Please try removing and
-                        adding the city again.
-                      </p>
+                      <>
+                        <p className="text-red-400">
+                          Failed to generate content. Please try removing and
+                          adding the city again.
+                        </p>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="m-4 bg-red-500 
+                          hover:bg-gradient-to-r hover:from-pink-200 hover:via-red-400 hover:to-rose-600
+                          bg-[length:200%_200%] bg-[position:0%_50%]"
+                          onClick={() => reGenerateCity(item._id)}
+                        >
+                          Re-generate Content
+                        </motion.button>
+                      </>
                     )}
                   </motion.li>
                 )}

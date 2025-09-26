@@ -61,26 +61,34 @@ function lines(parts: string[]) {
   return parts.join("\n");
 }
 
-function promptForCore(cityName: string) {
+function promptForCore(
+  cityName: string,
+  continentName: string,
+  countryName: string
+) {
   return lines([
-    "TASK: Compile a concise city profile using neutral, sourced facts.",
+    "TASK: You are a meticulous researcher. Your goal is to compile a rich and detailed profile for the specified city. Search the web for high-quality, factual information.",
     `CITY: ${cityName}`,
-    "OUTPUT: Return ONLY JSON with these exact fields:",
+    "INSTRUCTIONS:",
+    "1. For 'history', 'geography', 'demographics', and 'economy', you MUST write a detailed, informative paragraph for each. Do not leave these fields empty.",
+    "2. For 'landmarks' and 'myths', provide a list of at least 3-5 interesting items for each.",
+    "3. Return ONLY a single, valid JSON object with the exact fields specified below. Do not include any prose, commentary, or markdown formatting.",
+    "OUTPUT:",
     `{
-      "city": string,
-      "country": string | null,
-      "history": string,
-      "geography": string,
-      "demographics": string,
-      "economy": string,
-      "landmarks": string[],
-      "myths": string[],
+      "city": "${cityName}",
+      "country": "${countryName}",
+      "continent": "${continentName}",
+      "history": "A detailed paragraph about the city's history.",
+      "geography": "A detailed paragraph about the city's geography and climate.",
+      "demographics": "A detailed paragraph about the city's population and demographics.",
+      "economy": "A detailed paragraph about the city's economy and primary industries.",
+      "landmarks": ["List of 3-5 notable landmarks"],
+      "myths": ["List of 3-5 local myths or famous stories"],
       "latestNews": [],
       "upcomingEvents": [],
       "sources": [{"title": string, "url": string, "date": string | null}],
-      "generatedAt": string
+      "generatedAt": "An ISO timestamp string"
     }`,
-    "No markdown. No commentary. No trailing commas.",
   ]);
 }
 
@@ -128,7 +136,10 @@ export async function generateCityContent(cityId: string) {
 
   // ----- Pass 1: core profile -----
   const coreRes = await cityInfoAgent.generateVNext([
-    { role: "user", content: promptForCore(city.name) },
+    {
+      role: "user",
+      content: promptForCore(city.name, city.continent, city.country),
+    },
   ]);
   let core: CityContent;
 
@@ -139,7 +150,8 @@ export async function generateCityContent(cityId: string) {
     const sources = extractSearchResults(coreRes);
     core = CityContentSchema.parse({
       city: city.name,
-      country: undefined,
+      country: city.country || "",
+      continent: city.continent,
       history: "",
       geography: "",
       demographics: "",

@@ -30,6 +30,7 @@ export async function POST(req: Request) {
       _id: body._id,
       name: body.name,
       continent: body.continent,
+      country: body.country,
     };
 
     // Check if a city with this ID already exists

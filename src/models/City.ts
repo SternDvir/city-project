@@ -6,6 +6,7 @@ import { CityContent } from "@/lib/ai/city.schema"; // Import the content schema
 export interface ICity extends Document {
   _id: string;
   name: string;
+  country: string;
   continent: string;
   status?: "pending" | "ready" | "error";
   content?: CityContent | null;
@@ -23,6 +24,11 @@ const CitySchema: Schema = new Schema(
     name: {
       type: String,
       required: [true, "Please provide a name for the city."],
+      trim: true,
+    },
+    country: {
+      type: String,
+      required: [true, "Please provide the country for the city."],
       trim: true,
     },
     continent: {

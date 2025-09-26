@@ -17,6 +17,7 @@ export const EventItem = z.object({
 export const CityContentSchema = z.object({
   city: z.string(),
   country: z.string().optional(),
+  continent: z.string(),
   history: z.string(),
   geography: z.string(),
   demographics: z.string(),

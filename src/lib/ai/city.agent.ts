@@ -9,7 +9,6 @@ export const cityModel = openrouter("perplexity/sonar-pro", {
 
 // Singleton to avoid re-instantiation during HMR
 declare global {
-  // eslint-disable-next-line no-var
   var __CITY_AGENT__: Agent | undefined;
 }
 

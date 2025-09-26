@@ -13,7 +13,8 @@ import ErrorDisplay from "./ErrorDisplay";
 import { ICity } from "@/models/City"; // Import the correct city type
 
 function AppContent() {
-  const { cities, error, isLoading, addCity, deleteCity } = useCities();
+  const { cities, error, isLoading, addCity, deleteCity, reGenerateCity } =
+    useCities();
   const [showToast, setShowToast] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [continentVerification, setContinentVerification] = useState("");
@@ -59,6 +60,7 @@ function AppContent() {
         _id: result.annotations.geohash, // Use geohash as the unique ID
         name: result.formatted.split(",")[0],
         continent: result.components.continent || "Unknown",
+        country: result.components.country || "Unknown",
       };
       addCity(newCity);
       setIsModalOpen(false);
@@ -124,6 +126,7 @@ function AppContent() {
               selectedID={selectedID}
               onCityDelete={handleCityDelete}
               onCitySelect={handleCitySelect}
+              reGenerateCity={reGenerateCity}
             />
           </motion.div>
         )}
