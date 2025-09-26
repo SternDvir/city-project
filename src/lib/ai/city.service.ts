@@ -84,8 +84,8 @@ function promptForCore(
       "economy": "A detailed paragraph about the city's economy and primary industries.",
       "landmarks": ["List of 3-5 notable landmarks"],
       "myths": ["List of 3-5 local myths or famous stories"],
-      "latestNews": [],
-      "upcomingEvents": [],
+      "latestNews": [<LEAVE THIS EMPTY>],
+      "upcomingEvents": [<LEAVE THIS EMPTY>],
       "sources": [{"title": string, "url": string, "date": string | null}],
       "generatedAt": "An ISO timestamp string"
     }`,
@@ -99,7 +99,7 @@ function promptForFresh(cityName: string) {
     "OUTPUT: Return ONLY JSON with these exact fields:",
     `{
       "latestNews": [{"title": string, "url": string, "date": string}],
-      "upcomingEvents": [{"name": string, "date": string | null, "url": string | null}],
+      "upcomingEvents": [{"name": string, "date": string | "" | null, "url": string | null}],
       "sources": [{"title": string, "url": string, "date": string | null}]
     }`,
     "No markdown. No commentary. No trailing commas.",
@@ -193,6 +193,9 @@ export async function generateCityContent(cityId: string) {
   }
 
   const merged = mergeContent(core, fresh);
+  console.log("--- DATA BEFORE VALIDATION ---");
+  console.log(JSON.stringify(merged, null, 2));
+
   const validated = CityContentSchema.parse(merged);
 
   await City.updateOne(

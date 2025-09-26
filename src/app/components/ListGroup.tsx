@@ -55,6 +55,8 @@ const ListGroup = ({
       <ul className="bg-slate-800 rounded-lg shadow-lg p-0 overflow-hidden">
         {cities.map((item: ICity, index: number) => {
           const isSelected = item._id === selectedID;
+          const countryName = item.content?.country || item.country;
+
           return (
             <React.Fragment key={item._id}>
               <motion.li
@@ -67,6 +69,7 @@ const ListGroup = ({
                 onClick={() => onCitySelect(item._id)}
               >
                 {item.name}
+                {countryName && `, ${countryName}`} - {item.continent}{" "}
                 <StatusBadge status={item.status} />
               </motion.li>
 

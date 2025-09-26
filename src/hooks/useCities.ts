@@ -9,6 +9,7 @@ interface NewCityData {
   _id: string;
   name: string;
   continent: string;
+  country: string;
 }
 
 export function useCities() {
