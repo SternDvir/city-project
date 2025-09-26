@@ -1,16 +1,43 @@
+// src/app/components/ListGroup.tsx
 "use client";
 
 import React, { memo } from "react";
 import { ICity } from "@/models/City";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import LoadingSpinner from "./LoadingSpinner"; // The import is now correct and in use
 
 export interface ListGroupProps {
-  cities: ICity[]; // Use ICity here
+  cities: ICity[];
   onCityDelete: () => void;
   onCitySelect: (id: string) => void;
   selectedID: string | null;
 }
+
+// A small component for the status badge
+const StatusBadge = ({ status }: { status: string | undefined }) => {
+  if (!status || status === "ready") return null;
+
+  const baseClasses = "text-xs font-bold px-2 py-1 rounded-full ml-2";
+  let specificClasses = "";
+
+  switch (status) {
+    case "pending":
+      specificClasses = "bg-yellow-500/20 text-yellow-300 animate-pulse";
+      break;
+    case "error":
+      specificClasses = "bg-red-500/20 text-red-300";
+      break;
+    default:
+      return null;
+  }
+
+  return (
+    <span className={`${baseClasses} ${specificClasses}`}>
+      {status.toUpperCase()}
+    </span>
+  );
+};
 
 const ListGroup = ({
   cities,
@@ -21,57 +48,66 @@ const ListGroup = ({
   return (
     <>
       <h2 className="text-2xl font-bold mb-4 text-center">
-        List Group Component
+        Your Monitored Cities
       </h2>
       <ul className="bg-slate-800 rounded-lg shadow-lg p-0 overflow-hidden">
-        {cities.map((item: ICity, index: number) => (
-          // 1. Use a Fragment to group the main <li> and the details <li>
-          <React.Fragment key={item._id}>
-            <motion.li
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`p-4 cursor-pointer text-center transition-colors duration-200 border-b border-slate-700 last:border-b-0 ${
-                item._id === selectedID
-                  ? "bg-sky-500 text-white"
-                  : "hover:bg-slate-700"
-              }`}
-              onClick={() => onCitySelect(item._id)}
-            >
-              {item.name} -{" "}
-              <span className="text-slate-200">
-                Continent: {item.continent}
-              </span>
-            </motion.li>
+        {cities.map((item: ICity, index: number) => {
+          const isSelected = item._id === selectedID;
+          return (
+            <React.Fragment key={item._id}>
+              <motion.li
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className={`p-4 cursor-pointer text-center transition-colors duration-200 border-b border-slate-700 last:border-b-0 ${
+                  isSelected ? "bg-sky-500 text-white" : "hover:bg-slate-700"
+                }`}
+                onClick={() => onCitySelect(item._id)}
+              >
+                {item.name}
+                <StatusBadge status={item.status} />
+              </motion.li>
 
-            {/* 2. AnimatePresence will manage the appearance of the details panel */}
-            <AnimatePresence>
-              {item._id === selectedID && (
-                <motion.li
-                  // 3. Define the animation for the expandable section
-                  initial={{ opacity: 0, maxHeight: 0 }}
-                  animate={{ opacity: 1, maxHeight: "500px" }} // Use a large, fixed value
-                  exit={{ opacity: 0, maxHeight: 0 }}
-                  transition={{ duration: 0.7, ease: "easeOut" }}
-                  style={{ transformOrigin: "top" }}
-                  // 4. Style the new details panel as requested
-                  className="bg-sky-900/50 border-b-2 border-sky-600 text-center p-4 rounded-lg"
-                >
-                  <p className="text-m text-slate-200 mb-3">
-                    Did you know {item.name} is famous for its incredible
-                    landmarks and vibrant culture?
-                  </p>
-                  <Link
-                    href={`/cities/${encodeURIComponent(item.name)}`}
-                    className="inline-block bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 text-sm"
+              <AnimatePresence>
+                {isSelected && (
+                  <motion.li
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                    className="bg-sky-900/50 border-b-2 border-sky-600 text-center p-4"
                   >
-                    Explore {item.name}
-                  </Link>
-                </motion.li>
-              )}
-            </AnimatePresence>
-          </React.Fragment>
-        ))}
+                    {item.status === "ready" && (
+                      <>
+                        <p className="text-m text-slate-200 mb-3">
+                          Content is ready for {item.name}.
+                        </p>
+                        <Link
+                          href={`/cities/${encodeURIComponent(item.name)}`}
+                          className="inline-block bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 text-sm"
+                        >
+                          Explore {item.name}
+                        </Link>
+                      </>
+                    )}
+                    {item.status === "pending" && (
+                      <div className="flex items-center justify-center text-slate-300">
+                        <LoadingSpinner />
+                        <span className="ml-3">Generating content...</span>
+                      </div>
+                    )}
+                    {item.status === "error" && (
+                      <p className="text-red-400">
+                        Failed to generate content. Please try removing and
+                        adding the city again.
+                      </p>
+                    )}
+                  </motion.li>
+                )}
+              </AnimatePresence>
+            </React.Fragment>
+          );
+        })}
       </ul>
       <motion.button
         whileHover={{ scale: 1.05 }}

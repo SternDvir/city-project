@@ -1,13 +1,10 @@
 // src/hooks/useCities.ts
-
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
 import type { ICity } from "@/models/City";
-import mongoose from "mongoose";
 import axios from "axios";
 
 // This interface defines the shape of the city data when we CREATE it.
-// It doesn't have a temporary frontend ID yet.
 interface NewCityData {
   _id: string;
   name: string;
@@ -18,46 +15,100 @@ export function useCities() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cities, setCities] = useState<ICity[]>([]);
+  const pollingIntervalRef = useRef<number | null>(null);
+
+  const fetchCities = useCallback(async () => {
+    try {
+      const response = await api.get("/cities");
+      setCities(response.data);
+      // Check if we need to continue polling
+      const isStillPending = response.data.some(
+        (city: ICity) => city.status === "pending"
+      );
+      if (!isStillPending && pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      return response.data;
+    } catch (err) {
+      console.error("Failed to fetch cities:", err);
+      setError("Failed to load cities. Please check the server connection.");
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      return [];
+    }
+  }, []);
 
   useEffect(() => {
     const loadInitialData = async () => {
-      try {
-        const response = await api.get("/cities");
-        setCities(response.data);
-      } catch (err) {
-        console.error("Failed to load initial data:", err);
-        setError("Failed to load cities. Please check the server connection.");
-      } finally {
-        setIsLoading(false);
-      }
+      setIsLoading(true);
+      await fetchCities();
+      setIsLoading(false);
     };
     loadInitialData();
-  }, []);
 
-  const addCity = useCallback(async (newCityData: NewCityData) => {
-    // Optimistic UI: Use the incoming _id (geohash) for the UI update
-    setCities((prev) => [...prev, { ...newCityData } as ICity]);
-    setError(null);
-
-    try {
-      const response = await api.post("/cities", newCityData);
-      // Replace the optimistic city with the final, saved city from the server
-      setCities((prev) =>
-        prev.map((city) =>
-          city._id === newCityData._id ? response.data : city
-        )
-      );
-    } catch (error) {
-      console.error("Failed to add city:", error);
-      if (axios.isAxiosError(error) && error.response) {
-        setError(error.response.data.message || "Failed to add city.");
-      } else {
-        setError("An unexpected error occurred.");
+    // Cleanup on unmount
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
       }
-      // Rollback on failure
-      setCities((prev) => prev.filter((city) => city._id !== newCityData._id));
-    }
-  }, []);
+    };
+  }, [fetchCities]);
+
+  const startPolling = useCallback(() => {
+    // If polling is already active, don't start another one
+    if (pollingIntervalRef.current) return;
+
+    pollingIntervalRef.current = window.setInterval(() => {
+      console.log("Polling for city status updates...");
+      fetchCities();
+    }, 5000); // Poll every 5 seconds
+  }, [fetchCities]);
+
+  const addCity = useCallback(
+    async (newCityData: NewCityData) => {
+      // The new city will have a 'pending' status by default from the backend
+      const optimisticCity: ICity = {
+        ...newCityData,
+        status: "pending",
+      } as ICity;
+
+      setCities((prev) => [...prev, optimisticCity]);
+      setError(null);
+      startPolling(); // Start polling immediately after adding a city
+
+      try {
+        const response = await api.post("/cities", newCityData);
+
+        // Immediately trigger the AI generation
+        fetch(`/api/cities/${encodeURIComponent(response.data._id)}/generate`, {
+          method: "POST",
+          cache: "no-store",
+        });
+
+        // Replace the optimistic city with the final one from the server
+        setCities((prev) =>
+          prev.map((city) =>
+            city._id === newCityData._id ? response.data : city
+          )
+        );
+      } catch (error) {
+        console.error("Failed to add city:", error);
+        if (axios.isAxiosError(error) && error.response) {
+          setError(error.response.data.message || "Failed to add city.");
+        } else {
+          setError("An unexpected error occurred.");
+        }
+        // Rollback on failure
+        setCities((prev) =>
+          prev.filter((city) => city._id !== newCityData._id)
+        );
+      }
+    },
+    [startPolling]
+  );
 
   const deleteCity = useCallback(
     async (id: string) => {

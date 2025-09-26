@@ -123,10 +123,11 @@ function mergeContent(
 export async function generateCityContent(cityId: string) {
   await dbConnect();
   const city = await City.findById(cityId);
+  console.log("building city content of:", city);
   if (!city) throw new Error("City not found");
 
   // ----- Pass 1: core profile -----
-  const coreRes = await cityInfoAgent.generate([
+  const coreRes = await cityInfoAgent.generateVNext([
     { role: "user", content: promptForCore(city.name) },
   ]);
   let core: CityContent;
@@ -153,7 +154,7 @@ export async function generateCityContent(cityId: string) {
   }
 
   // ----- Pass 2: fresh news/events (recency filter) -----
-  const freshRes = await cityInfoAgent.generate([
+  const freshRes = await cityInfoAgent.generateVNext([
     {
       role: "user",
       content: promptForFresh(city.name),

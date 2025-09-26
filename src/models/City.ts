@@ -1,10 +1,16 @@
+// src/models/City.ts
 import mongoose, { Schema, Document } from "mongoose";
+import { CityContent } from "@/lib/ai/city.schema"; // Import the content schema type
 
-// 1. Define the interface for our City document
+// 1. Define the interface for our City document, including AI fields
 export interface ICity extends Document {
-  _id: string; // The unique identifier, now coming from OpenCage (geohash)
+  _id: string;
   name: string;
   continent: string;
+  status?: "pending" | "ready" | "error";
+  content?: CityContent | null;
+  lastRefreshed?: Date | null;
+  error?: string | null;
 }
 
 // 2. Create the Mongoose Schema
@@ -17,7 +23,7 @@ const CitySchema: Schema = new Schema(
     name: {
       type: String,
       required: [true, "Please provide a name for the city."],
-      trim: true, // Removes whitespace from both ends
+      trim: true,
     },
     continent: {
       type: String,
@@ -43,7 +49,5 @@ const CitySchema: Schema = new Schema(
 );
 
 // 3. Create and export the Mongoose Model
-// This line is crucial for Next.js. It checks if the model already exists
-// before trying to create it, preventing errors during hot-reloading.
 export default mongoose.models.City ||
   mongoose.model<ICity>("City", CitySchema);
