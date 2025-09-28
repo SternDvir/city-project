@@ -69,8 +69,8 @@ const ListGroup = ({
                 onClick={() => onCitySelect(item._id)}
               >
                 {item.name}
-                {countryName && `, ${countryName}`} - {item.continent}{" "}
-                <StatusBadge status={item.status} />
+                {countryName !== undefined && `, ${countryName}`} -{" "}
+                {item.continent} <StatusBadge status={item.status} />
               </motion.li>
 
               <AnimatePresence>
